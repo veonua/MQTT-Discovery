@@ -83,6 +83,10 @@ local profiles =  {
                     ['level']          = 'mqttlevel.v1',
                     ['dimmer']         = 'mqttlevel.v1',
                     ['valve']          = 'mqttvalve.v1',
+
+                    ['airconditioner'] = 'mqttairconditioner.v1',
+                    ['coffeemaker']    = 'mqttcoffeemaker.v1',
+                    ['dishwasher']     = 'mqttdishwasher.v1',
                   }
 
 
@@ -271,12 +275,14 @@ local function parse_topic(msgtopic)
 end
 
 
-local function create_MQTT_client(device)
+local function create_MQTT_client(driver, device)
 
 	-- create mqtt client
   local connect_args = {}
   connect_args.uri = device.preferences.broker
   connect_args.clean = true
+  connect_args.driver = driver
+  connect_args.device = device
   
   if device.preferences.userid ~= '' and device.preferences.password ~= '' then
     if device.preferences.userid ~= 'xxxxx' and device.preferences.password ~= 'xxxxx' then
@@ -342,7 +348,7 @@ local function create_MQTT_client(device)
 end
 
 
-local function init_mqtt(device)
+local function init_mqtt(driver, device)
 
   if device.preferences.broker == '192.168.1.xxx' then
 
@@ -372,7 +378,7 @@ local function init_mqtt(device)
 
   device:emit_event(cap_status.status('Connecting...'))
 
-	client = create_MQTT_client(device)
+	client = create_MQTT_client(driver, device)
 
 	-- Run MQTT loop in separate thread
 
@@ -398,7 +404,7 @@ local function init_mqtt(device)
 							return
 						end
 						log.info ('Attempting to reconnect to broker...')
-						client = create_MQTT_client(device)
+						client = create_MQTT_client(driver, device)
 					until client
 					
 				else
@@ -444,15 +450,15 @@ local function init_devices()
 end
 
 
-local function send_command(device, cmd)
+local function send_command(device, topic, payload)
 
   if (device.preferences.cmdTopic ~= 'xxxxx/xxxxx') and (device.preferences.cmdTopic ~= nil) then
   
     if client then
     
       assert(client:publish {
-                              topic = device.preferences.cmdTopic,
-                              payload = cmd,
+                              topic = device.preferences.cmdTopic .. '/' .. topic,
+                              payload = payload,
                               qos = tonumber(device.preferences.cmdqos),
                               retain = device.preferences.retain,
                             })
@@ -475,7 +481,7 @@ local function handle_refresh(driver, device, command)
   log.info ('Refresh requested')
 
 	client_reset_inprogress = true
-  init_mqtt(device)
+  init_mqtt(driver, device)
     
 end
 
@@ -486,7 +492,7 @@ local function handle_switch(driver, device, command)
   
   device:emit_event(capabilities.switch.switch(command.command))
   
-  send_command(device, command.command)
+  send_command(device, "switch", command.command)
   
 end
 
@@ -496,7 +502,7 @@ local function handle_level(driver, device, command)
   
   device:emit_event(capabilities.switchLevel.level(command.args.level))
   
-  send_command(device, tostring(command.args.level))
+  send_command(device, command.command, tostring(command.args.level))
   
 end
 
@@ -513,6 +519,55 @@ local function handle_valve(driver, device, command)
 end
 
 ------------------------------------------------------------------------
+
+local function handle_airconditioner_fan_mode(driver, device, command)
+
+  log.info ('Air conditioner fan mode command received:', command.command)
+  device:emit_event(capabilities.airConditionerFanMode.airConditionerFanMode(command.command))
+  
+end
+
+local function handle_airconditioner_mode(driver, device, command)
+
+  log.info ('Air conditioner mode command received:', command.args.mode)
+  device:emit_event(capabilities.airConditionerMode.airConditionerMode(command.args.mode))
+  
+  send_command(device, "mode/set", command.args.mode)
+end
+
+local function handle_thermostat_heating_setpoint(driver, device, command)
+
+  log.info ('Thermostat heating setpoint command received:', command.args.setpoint)
+  device:emit_event(capabilities.thermostatHeatingSetpoint.heatingSetpoint(command.args.setpoint))
+  
+  send_command(device, "heating/set", tostring(command.args.setpoint))
+end
+
+local function handle_thermostat_cooling_setpoint(driver, device, command)
+
+  log.info ('Thermostat cooling setpoint command received:', command.args.setpoint)
+  device:emit_event(capabilities.thermostatCoolingSetpoint.coolingSetpoint(command.args.setpoint))
+  
+  send_command(device, "cooling/set", tostring(command.args.setpoint))
+end
+
+local function handle_dishwasher_mode(driver, device, command)
+
+  log.info ('Dishwasher mode command received:', command.args.mode)
+  device:emit_event(capabilities.dishwasherMode.dishwasherMode(command.args.mode))
+  send_command(device, "mode/set", command.args.mode)
+
+end
+
+local function handle_dishwasher_operating_state(driver, device, command)
+
+  log.info ('Dishwasher operating state command received:', command.args.state)
+  device:emit_event(capabilities.dishwasherOperatingState.dishwasherJobState("finish"))
+  send_command(device, "state/set", command.args.state)
+
+end
+
+------------------------------------------------------------------------
 --                REQUIRED EDGE DRIVER HANDLERS
 ------------------------------------------------------------------------
 
@@ -522,7 +577,7 @@ local function device_init(driver, device)
   log.debug(device.id .. ": " .. device.device_network_id .. "> INITIALIZING")
   
   if device.device_network_id:find('mqttdisco', 1, 'plaintext') then
-    init_mqtt(device)
+    init_mqtt(driver, device)
     config_initialized = true
   end
   
@@ -566,6 +621,38 @@ local function device_added (driver, device)
         device:emit_event(capabilities.switchLevel.level(0))
       elseif cap.id == 'valve' then
         device:emit_event(capabilities.valve.valve('closed'))
+      ---
+      elseif cap.id == 'dishwasherOperatingState' then
+        device:emit_event(capabilities.dishwasherOperatingState.dishwasherJobState("finish"))
+      elseif cap.id == 'dishwasherMode' then
+        device:emit_event(capabilities.dishwasherMode.dishwasherMode("auto"))
+      ---
+      elseif cap.id == 'airConditionerFanMode' then
+        local supportedAcFanModes = {
+          "auto", "quiet", "lvl_1", "lvl_2", "lvl_3", "lvl_4", "lvl_5"
+        }
+        device:emit_event(capabilities.airConditionerFanMode.supportedAcFanModes(supportedAcFanModes))
+        --device:emit_event(capabilities.airConditionerFanMode.setFanMode("auto"))
+      elseif cap.id == 'airConditionerMode' then
+        local supportedAcModes = {
+          "auto", "cool", "heat", "dry", "fan"
+        }
+        device:emit_event(capabilities.airConditionerMode.supportedAcModes(supportedAcModes))
+        device:emit_event(capabilities.airConditionerMode.airConditionerMode("auto"))
+      ---
+      elseif cap.id == 'thermostatCoolingSetpoint' then
+        device:emit_event(capabilities.thermostatCoolingSetpoint.coolingSetpoint({value=20, unit='C'}))
+      elseif cap.id == 'thermostatHeatingSetpoint' then
+        device:emit_event(capabilities.thermostatHeatingSetpoint.heatingSetpoint({value=20, unit='C'}))
+      elseif cap.id == 'thermostatMode' then
+        local supportedThermostatModes = {
+          "auto", "cool", "heat", "off"
+        }
+        device:emit_event(capabilities.thermostatMode.supportedThermostatModes(supportedThermostatModes))
+        device:emit_event(capabilities.thermostatMode.thermostatMode("auto"))
+      elseif cap.id == 'thermostatOperatingState' then
+        device:emit_event(capabilities.thermostatOperatingState.thermostatOperatingState("idle"))
+      ---
       end
       
     end
@@ -700,6 +787,28 @@ thisDriver = Driver("thisDriver", {
       [capabilities.valve.commands.close.NAME] = handle_valve,
       [capabilities.valve.commands.open.NAME] = handle_valve,
     },
+
+    [capabilities.thermostatCoolingSetpoint.ID] = {
+      ["setCoolingSetpoint"] = handle_thermostat_cooling_setpoint,
+    },
+    [capabilities.thermostatHeatingSetpoint.ID] = {
+      ["setHeatingSetpoint"] = handle_thermostat_heating_setpoint,
+    },
+
+    [capabilities.airConditionerMode.ID] = {
+      ["setAirConditionerMode"] = handle_airconditioner_mode,
+    },
+    [capabilities.airConditionerFanMode.ID] = {
+      ["setAirConditionerFanMode"] = handle_airconditioner_fan_mode,
+    },
+
+    [capabilities.dishwasherMode.ID] = {
+      ["setDishwasherMode"] = handle_dishwasher_mode,
+    },
+    [capabilities.dishwasherOperatingState.ID] = {
+      ["setMachineState"] = handle_dishwasher_operating_state,
+    },
+      
   }
 })
 

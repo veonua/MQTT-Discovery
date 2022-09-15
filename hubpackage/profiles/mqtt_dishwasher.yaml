@@ -1,0 +1,51 @@
+name: mqttdishwasher.v1
+components:
+- id: main
+  capabilities:
+  - id: dishwasherOperatingState
+    version: 1
+
+  - id: winterdictionary35590.dishwashermode
+    version: 1
+  - id: dishwasherMode
+    version: 1
+
+  - id: temperatureMeasurement
+    version: 1
+  - id: contactSensor
+    version: 1
+  categories:
+  - name: Dishwasher
+  
+metadata:
+  ocfDeviceType: oic.d.dishwasher
+
+preferences:
+  - title: "Command Topic"
+    name: cmdTopic
+    description: "Topic String"
+    required: true
+    preferenceType: string
+    definition:
+      stringType: text
+      minLength: 6
+      maxLength: 32
+      default: "xxxxx/xxxxx"
+  - title: "Command Message QoS"
+    name: cmdqos
+    description: "Quality of Service"
+    required: true
+    preferenceType: enumeration
+    definition:
+      options:
+        qos0: "0"
+        qos1: "1"
+        qos2: "2"
+      default: qos1
+  - title: "Command Message Retention"
+    name: retain
+    description: "Retain Messages"
+    required: true
+    preferenceType: boolean
+    definition:
+      default: false
