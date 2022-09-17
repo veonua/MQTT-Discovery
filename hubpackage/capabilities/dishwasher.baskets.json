@@ -1,0 +1,50 @@
+{
+    "id": "winterdictionary35590.baskets",
+    "version": 1,
+    "status": "proposed",
+    "name": "baskets",
+    "attributes": {
+        "baskets": {
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "value": {
+                        "title": "Baskets",
+                        "type": "string",
+                        "enum": [
+                            "both",
+                            "top",
+                            "bottom"
+                        ]
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "value"
+                ]
+            },
+            "setter": "setBaskets",
+            "enumCommands": []
+        }
+    },
+    "commands": {
+        "setBaskets": {
+            "name": "setBaskets",
+            "arguments": [
+                {
+                    "name": "value",
+                    "optional": false,
+                    "schema": {
+                        "title": "Baskets",
+                        "type": "string",
+                        "enum": [
+                            "both",
+                            "top",
+                            "bottom"
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+}

@@ -5,8 +5,6 @@ components:
   - id: dishwasherOperatingState
     version: 1
 
-  - id: winterdictionary35590.dishwashermode
-    version: 1
   - id: dishwasherMode
     version: 1
 
@@ -14,6 +12,13 @@ components:
     version: 1
   - id: contactSensor
     version: 1
+
+  - id: partyvoice23922.status
+    version: 1
+
+  - id: winterdictionary35590.dishwasherbaskets
+    version: 1
+
   categories:
   - name: Dishwasher
   

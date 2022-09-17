@@ -20,9 +20,21 @@
 
 -- Edge libraries
 local capabilities = require "st.capabilities"
+local TemperatureMeasurement    = capabilities.temperatureMeasurement
+local ThermostatCoolingSetpoint = capabilities.thermostatCoolingSetpoint
+local ThermostatHeatingSetpoint = capabilities.thermostatHeatingSetpoint
+local ThermostatMode            = capabilities.thermostatMode
+local ThermostatFanMode         = capabilities.thermostatFanMode
+local ThermostatOperatingState  = capabilities.thermostatOperatingState
+local FanSpeed                  = capabilities.fanSpeed
+local FanOscillationMode        = capabilities.fanOscillationMode
+local DishwasherOperatingState  = capabilities.dishwasherOperatingState
+
+---
 local Driver = require "st.driver"
 local cosock = require "cosock"
 local socket = require "cosock.socket"          -- just for time
+local os     = require "os"
 --local Thread = require "st.thread"
 local log = require "log"
 
@@ -42,8 +54,10 @@ local SUBSCRIBE_TOPIC = 'smartthings/#'
 
 
 -- Custom Capabilities
-local cap_status = capabilities["partyvoice23922.status"]
-local cap_refresh = capabilities["partyvoice23922.refresh"]
+local cap_status                = capabilities["partyvoice23922.status"]
+local cap_refresh               = capabilities["partyvoice23922.refresh"]
+local DishwasherMode            = capabilities.dishwasherMode --["winterdictionary35590.dishwasherMode"]
+local DishwasherBaskets         = capabilities["winterdictionary35590.dishwasherbaskets"]          
 
 
 local function disptable(table, tab, maxlevels, currlevel)
@@ -93,11 +107,11 @@ local profiles =  {
 local function create_device(driver, topic)
 
   local MFG_NAME = 'SmartThings Community'
-  local MODEL = topic.cap
+  local MODEL = topic.profile
   local VEND_LABEL = topic.name
   local ID = 'MQTT_' .. topic.path .. '_' .. socket.gettime()
   
-  local PROFILE = profiles[topic.cap]
+  local PROFILE = profiles[topic.profile]
   
   log.info (string.format('Creating new device: label=<%s>, id=<%s>', VEND_LABEL, ID))
 
@@ -117,11 +131,14 @@ end
 
 
 local function determine_device(topic)
+  if topic.name == nil then
+    return nil
+  end
 
   local device_list = thisDriver:get_devices()
   
   for _, device in ipairs(device_list) do
-    if device.device_network_id:find(topic.path, 1, 'plaintext') then; return device; end
+    if device.device_network_id:find(topic.name, 1, 'plaintext') then; return device; end
   end
 
 end
@@ -158,15 +175,36 @@ local function validate_state(capattr, statevalue)
 end
 
 
+local function try_emit(device, capattr, state)
+  if validate_state(capattr, state) then
+    device:emit_event(capattr(state))
+  end
+end
+
+
 local function proc_state(topic, state)
 
   local device = determine_device(topic)
   
   log.debug (string.format('Device name <%s> sent updated state value = "%s"', topic.name, state))
   
-  if device then
+  if device == nil then
+    log.warn('Unrecognized device; message ignored <'.. tostring( topic.name ) .. '> cap:"' .. tostring( topic.cap ) .. '"')
+  else
+    if topic.cap == 'mode' then
+      if topic.profile == 'airconditioner' then
+        try_emit(device, capabilities.airConditionerMode, state)
+      elseif topic.profile == 'dishwasher' then
+        try_emit(device, capabilities.dishwasherMode.dishwasherMode, state)
+        --try_emit(device, DishwasherMode.dishwasherMode, state)
+      end
+    elseif topic.cap == 'water_hardness' then
+      device:emit_event(cap_status.status(state))
+      
+    elseif topic.cap == "baskets" then
+      device:emit_event(DishwasherBaskets.baskets(state))
 
-    if topic.cap == 'switch' or topic.cap == 'plug' or topic.cap == 'light' then
+    elseif topic.cap == 'switch' or topic.cap == 'plug' or topic.cap == 'light' then
     
       if validate_state(capabilities.switch.switch, state) then
         device:emit_event(capabilities.switch.switch(state))
@@ -185,10 +223,8 @@ local function proc_state(topic, state)
       end
     
     elseif topic.cap == 'contact' or topic.cap == 'contactSensor'then
-    
-      if validate_state(capabilities.contactSensor.contact, state) then
-        device:emit_event(capabilities.contactSensor.contact(state))
-      end
+      
+      try_emit(device, capabilities.contactSensor.contact, state)
     
     elseif topic.cap == 'momentary' or topic.cap == 'button' then
     
@@ -207,11 +243,11 @@ local function proc_state(topic, state)
         end
       end
       
-    elseif topic.cap == 'temperature' or topic.cap == 'temperatureMeasurement' then
+    elseif topic.cap == 'temperature' or topic.cap == TemperatureMeasurement.NAME then
     
       local temp = tonumber(state)
       if temp then
-        device:emit_event(capabilities.temperatureMeasurement.temperature(temp))
+        device:emit_event(TemperatureMeasurement.temperature(temp))
       end
     
     elseif topic.cap == 'alarm' then
@@ -224,7 +260,31 @@ local function proc_state(topic, state)
       if level then
         device:emit_event(capabilities.switchLevel.level(level))
       end
-      
+    
+    elseif topic.cap == 'state' then
+      if topic.profile == 'dishwasher' then
+        local machineState = "stop"
+        if state == "pause" then
+          machineState = "pause"
+        elseif state:find("wash") ~= nil then
+          machineState = "run"
+        end
+        
+        device:emit_event(DishwasherOperatingState.machineState(machineState))
+      end
+    elseif topic.cap == 'job_state' then
+      if topic.profile == 'dishwasher' then
+        if state == 'ready' then state = 'finish' else state = 'wash' end
+        device:emit_event(DishwasherOperatingState.dishwasherJobState(state))
+      end
+    elseif topic.cap == 'completion_min' then 
+      -- if machineState == "run" then
+      local epochSeconds = math.floor(os.time()) + (tonumber(state) * 60)
+      local time = os.date("!%Y-%m-%dT%TZ", epochSeconds)
+    
+      log.debug('completion time: ' .. time)
+      device:emit_event(DishwasherOperatingState.completionTime(time)) -- "2022-09-05T14:18:45Z" 
+
     elseif topic.cap == 'valve' then
       if validate_state(capabilities.valve.valve, state) then
         device:emit_event(capabilities.valve.valve(state))
@@ -233,9 +293,7 @@ local function proc_state(topic, state)
     else
       log.warn ('Unsupported capability:', topic.cap)
     end
-  
-  else
-    log.warn('Unrecognized device; message ignored', topic.name)
+
   end
 
 end
@@ -243,7 +301,7 @@ end
 
 local function parse_topic(msgtopic)
 
-  -- Topic format:  smartthings/<capability>/[<node_id>/]<unique_name>/<config | state>
+  -- Topic format:  smartthings/<profile>/<unique_name>/<capabiltiy>
 
   local topic = {}
   local topic_parts = {}
@@ -257,17 +315,10 @@ local function parse_topic(msgtopic)
   if #topic_parts < 4 then; return; end
   
   topic.prefix = topic_parts[1]
-  topic.cap = topic_parts[2]
-  if #topic_parts > 4 then
-    topic.node = topic_parts[3]
-    topic.name = topic_parts[4]
-    topic.action = topic_parts[5]
-  else
-    topic.node = nil
-    topic.name = topic_parts[3]
-    topic.action = topic_parts[4]
-  end
-
+  topic.profile = topic_parts[2]
+  topic.name = topic_parts[3]
+  topic.cap = topic_parts[4]
+  
   topic.path = msgtopic:match('smartthings/(.+)/%w+$')
   
   return topic
@@ -323,10 +374,10 @@ local function create_MQTT_client(driver, device)
       
         if topic.prefix ~= TOPIC_PREFIX then; return; end
         
-        if topic.action == 'config' then
+        if topic.cap == 'config' then
           proc_config(topic, msg.payload)
           
-        elseif topic.action == 'state' then
+        else --if topic.action == 'state' then
           proc_state(topic, msg.payload)
           
         end
@@ -538,7 +589,7 @@ end
 local function handle_thermostat_heating_setpoint(driver, device, command)
 
   log.info ('Thermostat heating setpoint command received:', command.args.setpoint)
-  device:emit_event(capabilities.thermostatHeatingSetpoint.heatingSetpoint(command.args.setpoint))
+  device:emit_event(ThermostatHeatingSetpoint.heatingSetpoint(command.args.setpoint))
   
   send_command(device, "heating/set", tostring(command.args.setpoint))
 end
@@ -546,15 +597,40 @@ end
 local function handle_thermostat_cooling_setpoint(driver, device, command)
 
   log.info ('Thermostat cooling setpoint command received:', command.args.setpoint)
-  device:emit_event(capabilities.thermostatCoolingSetpoint.coolingSetpoint(command.args.setpoint))
+  device:emit_event(ThermostatCoolingSetpoint.coolingSetpoint(command.args.setpoint))
   
   send_command(device, "cooling/set", tostring(command.args.setpoint))
 end
 
+local function handle_thermostat_mode(driver, device, command)
+  
+  log.info ('Thermostat mode command received:', command.args.mode)
+  device:emit_event(ThermostatMode.thermostatMode(command.args.mode))  
+  send_command(device, "mode/set", command.args.mode)
+
+end
+
+local function handle_fan_oscillation_mode(driver, device, command)
+
+  log.info ('Fan oscillation mode command received:', command.args.fanOscillationMode)
+  device:emit_event(FanOscillationMode.fanOscillationMode(command.args.fanOscillationMode))
+  send_command(device, "fan_oscillation/set", command.args.fanOscillationMode)
+
+end
+
+local function handle_fan_speed(driver, device, command)
+
+  log.info ('Fan speed command received:', command.args.speed)
+  device:emit_event(FanSpeed.fanSpeed(command.args.speed))
+  send_command(device, "fan_speed/set", tostring(command.args.speed))
+
+end
+
+
 local function handle_dishwasher_mode(driver, device, command)
 
   log.info ('Dishwasher mode command received:', command.args.mode)
-  device:emit_event(capabilities.dishwasherMode.dishwasherMode(command.args.mode))
+  device:emit_event(DishwasherMode.dishwasherMode(command.args.mode))
   send_command(device, "mode/set", command.args.mode)
 
 end
@@ -566,6 +642,17 @@ local function handle_dishwasher_operating_state(driver, device, command)
   send_command(device, "state/set", command.args.state)
 
 end
+
+local function handle_dishwasher_baskets(driver, device, command)
+
+  log.info ('Dishwasher baskets command received:', command.args.value)
+  device:emit_event(DishwasherBaskets.baskets(command.args.value))
+  send_command(device, "baskets/set", command.args.value)
+
+end
+
+---
+
 
 ------------------------------------------------------------------------
 --                REQUIRED EDGE DRIVER HANDLERS
@@ -613,7 +700,7 @@ local function device_added (driver, device)
                                   }
         device:emit_event(capabilities.button.supportedButtonValues(supported_values))
         
-      elseif cap.id == 'temperatureMeasurement' then
+      elseif cap.id == TemperatureMeasurement.ID then
         device:emit_event(capabilities.temperatureMeasurement.temperature({value=20, unit='C'}))
       elseif cap.id == 'alarm' then
         device:emit_event(capabilities.alarm.alarm('off'))
@@ -624,8 +711,8 @@ local function device_added (driver, device)
       ---
       elseif cap.id == 'dishwasherOperatingState' then
         device:emit_event(capabilities.dishwasherOperatingState.dishwasherJobState("finish"))
-      elseif cap.id == 'dishwasherMode' then
-        device:emit_event(capabilities.dishwasherMode.dishwasherMode("auto"))
+      elseif cap.id == DishwasherMode.ID then
+        device:emit_event(DishwasherMode.dishwasherMode("auto"))
       ---
       elseif cap.id == 'airConditionerFanMode' then
         local supportedAcFanModes = {
@@ -640,19 +727,32 @@ local function device_added (driver, device)
         device:emit_event(capabilities.airConditionerMode.supportedAcModes(supportedAcModes))
         device:emit_event(capabilities.airConditionerMode.airConditionerMode("auto"))
       ---
-      elseif cap.id == 'thermostatCoolingSetpoint' then
-        device:emit_event(capabilities.thermostatCoolingSetpoint.coolingSetpoint({value=20, unit='C'}))
-      elseif cap.id == 'thermostatHeatingSetpoint' then
-        device:emit_event(capabilities.thermostatHeatingSetpoint.heatingSetpoint({value=20, unit='C'}))
-      elseif cap.id == 'thermostatMode' then
+      elseif cap.id == ThermostatCoolingSetpoint.ID then
+        device:emit_event(ThermostatCoolingSetpoint.coolingSetpoint({value=20, unit='C'}))
+      elseif cap.id == ThermostatHeatingSetpoint.ID then
+        device:emit_event(ThermostatHeatingSetpoint.heatingSetpoint({value=20, unit='C'}))
+      elseif cap.id == ThermostatMode.thermostatMode.ID then
         local supportedThermostatModes = {
-          "auto", "cool", "heat", "off"
+          ThermostatMode.thermostatMode.off.NAME, ThermostatMode.thermostatMode.auto.NAME, 
+          ThermostatMode.thermostatMode.cool.NAME, ThermostatMode.thermostatMode.heat.NAME, 
+          ThermostatMode.thermostatMode.dryair.NAME, ThermostatMode.thermostatMode.fanonly.NAME,
         }
-        device:emit_event(capabilities.thermostatMode.supportedThermostatModes(supportedThermostatModes))
-        device:emit_event(capabilities.thermostatMode.thermostatMode("auto"))
-      elseif cap.id == 'thermostatOperatingState' then
-        device:emit_event(capabilities.thermostatOperatingState.thermostatOperatingState("idle"))
+        device:emit_event(ThermostatMode.supportedThermostatModes(supportedThermostatModes))
+        device:emit_event(ThermostatMode.thermostatMode(ThermostatMode.thermostatMode.auto.NAME))
+      elseif cap.id == ThermostatOperatingState.ID then
+        device:emit_event(ThermostatOperatingState.thermostatOperatingState.idle())
+        -- device:emit_event(ThermostatOperatingState.thermostatOperatingState.fan_only())
+      elseif cap.id == ThermostatFanMode.ID then
+        local supportedModes = { ThermostatFanMode.thermostatFanMode.auto.NAME, ThermostatFanMode.thermostatFanMode.on.NAME }
+        device:emit_event(ThermostatFanMode.supportedThermostatFanModes(supportedModes))
+        device:emit_event(ThermostatFanMode.thermostatFanMode(supportedFanModes[1]))
       ---
+      elseif cap.id == FanSpeed.ID then
+        device:emit_event(FanSpeed.fanSpeed(1))
+      elseif cap.id == FanOscillationMode.ID then
+        local supportedModes = { "swing", "fixed" }
+        device:emit_event(FanOscillationMode.supportedFanOscillationModes(supportedModes))
+        device:emit_event(FanOscillationMode.fanOscillationMode("swing"))
       end
       
     end
@@ -788,10 +888,10 @@ thisDriver = Driver("thisDriver", {
       [capabilities.valve.commands.open.NAME] = handle_valve,
     },
 
-    [capabilities.thermostatCoolingSetpoint.ID] = {
+    [ThermostatCoolingSetpoint.ID] = {
       ["setCoolingSetpoint"] = handle_thermostat_cooling_setpoint,
     },
-    [capabilities.thermostatHeatingSetpoint.ID] = {
+    [ThermostatHeatingSetpoint.ID] = {
       ["setHeatingSetpoint"] = handle_thermostat_heating_setpoint,
     },
 
@@ -807,6 +907,22 @@ thisDriver = Driver("thisDriver", {
     },
     [capabilities.dishwasherOperatingState.ID] = {
       ["setMachineState"] = handle_dishwasher_operating_state,
+    },
+
+    [ThermostatMode.ID] = {
+      ["setThermostatMode"] = handle_thermostat_mode,
+    },
+
+    [FanOscillationMode.ID] = {
+      ["setFanOscillationMode"] = handle_fan_oscillation_mode,
+    },
+
+    [FanSpeed.ID] = {
+      ["setFanSpeed"] = handle_fan_speed,
+    },
+
+    [DishwasherBaskets.ID] = {
+      ["setBaskets"] = handle_dishwasher_baskets,
     },
       
   }

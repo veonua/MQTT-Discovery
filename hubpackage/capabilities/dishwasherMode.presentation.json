@@ -1,0 +1,235 @@
+{
+    "dashboard": {
+        "states": [
+            {
+                "label": "{{dishwasherMode.value}}",
+                "alternatives": [
+                    {
+                        "key": "auto",
+                        "value": "Auto",
+                        "type": "active"
+                    },
+                    {
+                        "key": "quick",
+                        "value": "Quick",
+                        "type": "active"
+                    },
+                    {
+                        "key": "rinse",
+                        "value": "Rinse",
+                        "type": "active"
+                    },
+                    {
+                        "key": "eco",
+                        "value": "Eco",
+                        "type": "active"
+                    },
+                    {
+                        "key": "intense",
+                        "value": "Intense",
+                        "type": "active"
+                    },
+                    {
+                        "key": "quick",
+                        "value": "Quick",
+                        "type": "active"
+                    },
+                    {
+                        "key": "quick delicate",
+                        "value": "Quick Delicate",
+                        "type": "active"
+                    }
+                ]
+            }
+        ],
+        "actions": []
+    },
+    "detailView": [
+        {
+            "label": "{{i18n.label}}",
+            "displayType": "list",
+            "list": {
+                "command": {
+                    "name": "setDishwasherMode",
+                    "alternatives": [
+                        {
+                            "key": "auto",
+                            "value": "Auto",
+                            "type": "active"
+                        },
+                        {
+                            "key": "quick",
+                            "value": "Quick",
+                            "type": "active"
+                        },
+                        {
+                            "key": "rinse",
+                            "value": "Rinse",
+                            "type": "active"
+                        },
+                        {
+                            "key": "eco",
+                            "value": "Eco",
+                            "type": "active"
+                        },
+                        {
+                            "key": "intense",
+                            "value": "Intense",
+                            "type": "active"
+                        },
+                        {
+                            "key": "quick",
+                            "value": "Quick",
+                            "type": "active"
+                        },
+                        {
+                            "key": "quick delicate",
+                            "value": "Quick Delicate",
+                            "type": "active"
+                        }
+                    ],
+                    "argumentType": "string"
+                },
+                "state": {
+                    "value": "dishwasherMode.value",
+                    "valueType": "string",
+                    "alternatives": [
+                        {
+                            "key": "auto",
+                            "value": "Auto",
+                            "type": "active"
+                        },
+                        {
+                            "key": "quick",
+                            "value": "Quick",
+                            "type": "active"
+                        },
+                        {
+                            "key": "rinse",
+                            "value": "Rinse",
+                            "type": "active"
+                        },
+                        {
+                            "key": "eco",
+                            "value": "Eco",
+                            "type": "active"
+                        },
+                        {
+                            "key": "intense",
+                            "value": "Intense",
+                            "type": "active"
+                        },
+                        {
+                            "key": "quick",
+                            "value": "Quick",
+                            "type": "active"
+                        },
+                        {
+                            "key": "quick delicate",
+                            "value": "Quick Delicate",
+                            "type": "active"
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "automation": {
+        "conditions": [
+            {
+                "label": "{{i18n.label}}",
+                "displayType": "list",
+                "list": {
+                    "alternatives": [
+                        {
+                            "key": "auto",
+                            "value": "Auto",
+                            "type": "active"
+                        },
+                        {
+                            "key": "quick",
+                            "value": "Quick",
+                            "type": "active"
+                        },
+                        {
+                            "key": "rinse",
+                            "value": "Rinse",
+                            "type": "active"
+                        },
+                        {
+                            "key": "eco",
+                            "value": "Eco",
+                            "type": "active"
+                        },
+                        {
+                            "key": "intense",
+                            "value": "Intense",
+                            "type": "active"
+                        },
+                        {
+                            "key": "quick",
+                            "value": "Quick",
+                            "type": "active"
+                        },
+                        {
+                            "key": "quick delicate",
+                            "value": "Quick Delicate",
+                            "type": "active"
+                        }
+                    ],
+                    "value": "dishwasherMode.value",
+                    "valueType": "string"
+                }
+            }
+        ],
+        "actions": [
+            {
+                "label": "{{i18n.label}}",
+                "displayType": "list",
+                "list": {
+                    "alternatives": [
+                        {
+                            "key": "auto",
+                            "value": "Auto",
+                            "type": "active"
+                        },
+                        {
+                            "key": "quick",
+                            "value": "Quick",
+                            "type": "active"
+                        },
+                        {
+                            "key": "rinse",
+                            "value": "Rinse",
+                            "type": "active"
+                        },
+                        {
+                            "key": "eco",
+                            "value": "Eco",
+                            "type": "active"
+                        },
+                        {
+                            "key": "intense",
+                            "value": "Intense",
+                            "type": "active"
+                        },
+                        {
+                            "key": "quick",
+                            "value": "Quick",
+                            "type": "active"
+                        },
+                        {
+                            "key": "quick delicate",
+                            "value": "Quick Delicate",
+                            "type": "active"
+                        }
+                    ],
+                    "command": "setDishwasherMode",
+                    "argumentType": "string"
+                }
+            }
+        ]
+    },
+    "id": "winterdictionary35590.dishwashermode",
+    "version": 1
+}

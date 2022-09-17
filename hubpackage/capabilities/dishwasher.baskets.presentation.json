@@ -1,0 +1,114 @@
+{
+    "dashboard": {
+        "states": [],
+        "actions": []
+    },
+    "detailView": [
+        {
+            "label": "Baskets",
+            "displayType": "list",
+            "list": {
+                "command": {
+                    "name": "setBaskets",
+                    "alternatives": [
+                        {
+                            "key": "both",
+                            "value": "Both",
+                            "type": "active"
+                        },
+                        {
+                            "key": "top",
+                            "value": "Top",
+                            "type": "active"
+                        },
+                        {
+                            "key": "bottom",
+                            "value": "Bottom",
+                            "type": "active"
+                        }
+                    ],
+                    "argumentType": "string"
+                },
+                "state": {
+                    "value": "baskets.value",
+                    "valueType": "string",
+                    "alternatives": [
+                        {
+                            "key": "both",
+                            "value": "Both",
+                            "type": "active"
+                        },
+                        {
+                            "key": "top",
+                            "value": "Top",
+                            "type": "active"
+                        },
+                        {
+                            "key": "bottom",
+                            "value": "Bottom",
+                            "type": "active"
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "automation": {
+        "conditions": [
+            {
+                "label": "Baskets",
+                "displayType": "list",
+                "list": {
+                    "alternatives": [
+                        {
+                            "key": "both",
+                            "value": "Both",
+                            "type": "active"
+                        },
+                        {
+                            "key": "top",
+                            "value": "Top",
+                            "type": "active"
+                        },
+                        {
+                            "key": "bottom",
+                            "value": "Bottom",
+                            "type": "active"
+                        }
+                    ],
+                    "value": "baskets.value",
+                    "valueType": "string"
+                }
+            }
+        ],
+        "actions": [
+            {
+                "label": "Baskets",
+                "displayType": "list",
+                "list": {
+                    "alternatives": [
+                        {
+                            "key": "both",
+                            "value": "Both",
+                            "type": "active"
+                        },
+                        {
+                            "key": "top",
+                            "value": "Top",
+                            "type": "active"
+                        },
+                        {
+                            "key": "bottom",
+                            "value": "Bottom",
+                            "type": "active"
+                        }
+                    ],
+                    "command": "setBaskets",
+                    "argumentType": "string"
+                }
+            }
+        ]
+    },
+    "id": "winterdictionary35590.dishwasherbaskets",
+    "version": 1
+}
