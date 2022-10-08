@@ -1,0 +1,182 @@
+{
+    "dashboard": {
+        "states": [],
+        "actions": []
+    },
+    "detailView": [
+        {
+            "label": "Brew",
+            "displayType": "list",
+            "visibleCondition": {
+                "capability": "switch",
+                "component": "main",
+                "attribute": "switch",
+                "operator": "EQUALS",
+                "operand": "on"
+            },
+            "list": {
+                "command": {
+                    "name": "setBrew",
+                    "alternatives": [
+                        {
+                            "key": "coffee",
+                            "value": "Coffee",
+                            "type": "active"
+                        },
+                        {
+                            "key": "espresso",
+                            "value": "Espresso",
+                            "type": "active"
+                        },
+                        {
+                            "key": "cappuccino",
+                            "value": "Cappuccino",
+                            "type": "active"
+                        },
+                        {
+                            "key": "hot_water",
+                            "value": "Hot Water",
+                            "type": "active"
+                        },
+                        {
+                            "key": "2xcoffee",
+                            "value": "Coffee x2",
+                            "type": "active"
+                        },
+                        {
+                            "key": "2xespresso",
+                            "value": "Espresso x2",
+                            "type": "active"
+                        }
+                    ],
+                    "argumentType": "string"
+                },
+                "state": {
+                    "value": "brew.value",
+                    "valueType": "string",
+                    "alternatives": [
+                        {
+                            "key": "coffee",
+                            "value": "Coffee",
+                            "type": "active"
+                        },
+                        {
+                            "key": "espresso",
+                            "value": "Espresso",
+                            "type": "active"
+                        },
+                        {
+                            "key": "cappuccino",
+                            "value": "Cappuccino",
+                            "type": "active"
+                        },
+                        {
+                            "key": "hot_water",
+                            "value": "Hot Water",
+                            "type": "active"
+                        },
+                        {
+                            "key": "2xcoffee",
+                            "value": "Coffee x2",
+                            "type": "active"
+                        },
+                        {
+                            "key": "2xespresso",
+                            "value": "Espresso x2",
+                            "type": "active"
+                        }
+
+                    ]
+                }
+            }
+        }
+    ],
+    "automation": {
+        "conditions": [
+            {
+                "label": "Brew",
+                "displayType": "list",
+                "list": {
+                    "alternatives": [
+                        {
+                            "key": "coffee",
+                            "value": "Coffee",
+                            "type": "active"
+                        },
+                        {
+                            "key": "espresso",
+                            "value": "Espresso",
+                            "type": "active"
+                        },
+                        {
+                            "key": "cappuccino",
+                            "value": "Cappuccino",
+                            "type": "active"
+                        },
+                        {
+                            "key": "hot_water",
+                            "value": "Hot Water",
+                            "type": "active"
+                        },
+                        {
+                            "key": "2xcoffee",
+                            "value": "Coffee x2",
+                            "type": "active"
+                        },
+                        {
+                            "key": "2xespresso",
+                            "value": "Espresso x2",
+                            "type": "active"
+                        }
+                    ],
+                    "value": "brew.value",
+                    "valueType": "string"
+                }
+            }
+        ],
+        "actions": [
+            {
+                "label": "Brew",
+                "displayType": "list",
+                "list": {
+                    "alternatives": [
+                        {
+                            "key": "coffee",
+                            "value": "Coffee",
+                            "type": "active"
+                        },
+                        {
+                            "key": "espresso",
+                            "value": "Espresso",
+                            "type": "active"
+                        },
+                        {
+                            "key": "cappuccino",
+                            "value": "Cappuccino",
+                            "type": "active"
+                        },
+                        {
+                            "key": "hot_water",
+                            "value": "Hot Water",
+                            "type": "active"
+                        },
+                        {
+                            "key": "2xcoffee",
+                            "value": "Coffee x2",
+                            "type": "active"
+                        },
+                        {
+                            "key": "2xespresso",
+                            "value": "Espresso x2",
+                            "type": "active"
+                        }
+                    ],
+                    "command": "setBrew",
+                    "argumentType": "string"
+                }
+            }
+        ]
+    },
+    "id": "winterdictionary35590.coffeebrew",
+    "version": 1
+}

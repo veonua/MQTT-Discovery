@@ -2,6 +2,9 @@ name: mqttdishwasher.v1
 components:
 - id: main
   capabilities:
+  - id: switch
+    version: 1
+
   - id: dishwasherOperatingState
     version: 1
 

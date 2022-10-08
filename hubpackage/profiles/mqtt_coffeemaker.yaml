@@ -4,11 +4,29 @@ components:
   capabilities:
   - id: switch
     version: 1
+
+  - id: robotCleanerMovement
+    version: 1
   
+  - id: winterdictionary35590.coffeebrew
+    version: 1
+
+  - id: winterdictionary35590.coffeewater
+    version: 1
+
+  - id: winterdictionary35590.coffeestrength2
+    version: 1
+
+  - id: partyvoice23922.status
+    version: 1
+
   categories:
-  - name: Switch
+    - name: SmartPlug
+  
 metadata:
-  ocfDeviceType: x.com.st.d.waterheater
+  deviceType: SmartPlug
+  ocfDeviceType: oic.d.smartplug
+  deviceTypeId: SmartPlug  
 
 preferences:
   - title: "Command Topic"

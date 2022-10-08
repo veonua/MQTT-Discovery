@@ -1,0 +1,79 @@
+{
+    "dashboard": {
+        "states": [],
+        "actions": []
+    },
+    "detailView": [
+        {
+            "label": "Water",
+            "displayType": "slider",
+            "visibleCondition": {
+                "capability": "switch",
+                "component": "main",
+                "attribute": "switch",
+                "operator": "EQUALS",
+                "operand": "on"
+            },
+            "slider": {
+                "range": [
+                    1,
+                    3
+                ],
+                "alternatives": [
+                    {
+                        "key": "1",
+                        "value": "1",
+                        "type": "active"
+                    },
+                    {
+                        "key": "2",
+                        "value": "2",
+                        "type": "active"
+                    },
+                    {
+                        "key": "3",
+                        "value": "3",
+                        "type": "active"
+                    }
+                ],
+                "command": "setWaterLevel",
+                "argumentType": "integer",
+                "value": "waterLevel.value",
+                "valueType": "integer"
+            }
+        }
+    ],
+    "automation": {
+        "conditions": [
+        ],
+        "actions": [
+            {
+                "label": "Water",
+                "displayType": "list",
+                "list": {
+                    "alternatives": [
+                        {
+                            "key": "1",
+                            "value": "1",
+                            "type": "active"
+                        },
+                        {
+                            "key": "2",
+                            "value": "2",
+                            "type": "active"
+                        },
+                        {
+                            "key": "3",
+                            "value": "3",
+                            "type": "active"
+                        }
+                    ],
+                    "command": "setWaterLevel",
+                    "argumentType": "integer"
+                }
+            }
+        ]
+    },
+    "id": "winterdictionary35590.coffeewater",
+    "version": 1
+}

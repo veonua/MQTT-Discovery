@@ -58,6 +58,10 @@ local cap_status                = capabilities["partyvoice23922.status"]
 local cap_refresh               = capabilities["partyvoice23922.refresh"]
 local DishwasherMode            = capabilities.dishwasherMode --["winterdictionary35590.dishwasherMode"]
 local DishwasherBaskets         = capabilities["winterdictionary35590.dishwasherbaskets"]          
+local CoffeeBrew                = capabilities["winterdictionary35590.coffeebrew"]          
+local CoffeeWater               = capabilities["winterdictionary35590.coffeewater"]
+local CoffeeStength             = capabilities["winterdictionary35590.coffeestrength2"]
+--local CoffeeState               = capabilities["winterdictionary35590.coffeemakeroperatingstate"]
 
 
 local function disptable(table, tab, maxlevels, currlevel)
@@ -99,7 +103,7 @@ local profiles =  {
                     ['valve']          = 'mqttvalve.v1',
 
                     ['airconditioner'] = 'mqttairconditioner.v1',
-                    ['coffeemaker']    = 'mqttcoffeemaker.v1',
+                    ['coffee']         = 'mqttcoffeemaker.v1',
                     ['dishwasher']     = 'mqttdishwasher.v1',
                   }
 
@@ -126,7 +130,6 @@ local function create_device(driver, topic)
                             }
                       
   assert (driver:try_create_device(create_device_msg), "failed to create device")
-
 end
 
 
@@ -198,6 +201,37 @@ local function proc_state(topic, state)
         try_emit(device, capabilities.dishwasherMode.dishwasherMode, state)
         --try_emit(device, DishwasherMode.dishwasherMode, state)
       end
+    elseif topic.cap == 'brew' then
+      if state == nil or state == '' then
+        device:emit_event( CoffeeBrew.brew("Select") )
+      else
+        device:emit_event( CoffeeBrew.brew(state) )
+      end
+      ---
+    elseif topic.cap == 'water_level' and state ~= nil then
+      local water_level = tonumber(state)
+      device:emit_event( CoffeeWater.waterLevel({ value= water_level }))
+      
+    elseif topic.cap == 'strength_level' and state ~= nil then
+      local strength = tonumber(state)
+      device:emit_event( CoffeeStength.strength({ value = strength }))
+      
+    elseif topic.cap == 'status' then
+      device:emit_event(cap_status.status(state))
+      if topic.profile == 'coffee' then
+
+        local _state = "idle"
+        if state == 'off' then
+          _state = 'powerOff'
+        elseif state == 'ready' then
+          _state = 'idle'
+        elseif state == 'brewing' then
+          _state = 'cleaning'
+        end
+        
+        device:emit_event(capabilities.robotCleanerMovement.robotCleanerMovement({value=_state}))
+      end  
+    
     elseif topic.cap == 'water_hardness' then
       device:emit_event(cap_status.status(state))
       
@@ -509,7 +543,7 @@ local function send_command(device, topic, payload)
     
       assert(client:publish {
                               topic = device.preferences.cmdTopic .. '/' .. topic,
-                              payload = payload,
+                              payload = tostring(payload),
                               qos = tonumber(device.preferences.cmdqos),
                               retain = device.preferences.retain,
                             })
@@ -553,7 +587,7 @@ local function handle_level(driver, device, command)
   
   device:emit_event(capabilities.switchLevel.level(command.args.level))
   
-  send_command(device, command.command, tostring(command.args.level))
+  send_command(device, command.command, command.args.level)
   
 end
 
@@ -583,7 +617,7 @@ local function handle_airconditioner_mode(driver, device, command)
   log.info ('Air conditioner mode command received:', command.args.mode)
   device:emit_event(capabilities.airConditionerMode.airConditionerMode(command.args.mode))
   
-  send_command(device, "mode/set", command.args.mode)
+  send_command(device, "mode", command.args.mode)
 end
 
 local function handle_thermostat_heating_setpoint(driver, device, command)
@@ -591,7 +625,7 @@ local function handle_thermostat_heating_setpoint(driver, device, command)
   log.info ('Thermostat heating setpoint command received:', command.args.setpoint)
   device:emit_event(ThermostatHeatingSetpoint.heatingSetpoint(command.args.setpoint))
   
-  send_command(device, "heating/set", tostring(command.args.setpoint))
+  send_command(device, "heating", command.args.setpoint)
 end
 
 local function handle_thermostat_cooling_setpoint(driver, device, command)
@@ -599,59 +633,64 @@ local function handle_thermostat_cooling_setpoint(driver, device, command)
   log.info ('Thermostat cooling setpoint command received:', command.args.setpoint)
   device:emit_event(ThermostatCoolingSetpoint.coolingSetpoint(command.args.setpoint))
   
-  send_command(device, "cooling/set", tostring(command.args.setpoint))
+  send_command(device, "cooling", command.args.setpoint)
 end
 
 local function handle_thermostat_mode(driver, device, command)
   
   log.info ('Thermostat mode command received:', command.args.mode)
   device:emit_event(ThermostatMode.thermostatMode(command.args.mode))  
-  send_command(device, "mode/set", command.args.mode)
+  send_command(device, "mode", command.args.mode)
 
 end
 
 local function handle_fan_oscillation_mode(driver, device, command)
-
   log.info ('Fan oscillation mode command received:', command.args.fanOscillationMode)
   device:emit_event(FanOscillationMode.fanOscillationMode(command.args.fanOscillationMode))
-  send_command(device, "fan_oscillation/set", command.args.fanOscillationMode)
-
+  send_command(device, "fan_oscillation", command.args.fanOscillationMode)
 end
 
 local function handle_fan_speed(driver, device, command)
-
   log.info ('Fan speed command received:', command.args.speed)
   device:emit_event(FanSpeed.fanSpeed(command.args.speed))
-  send_command(device, "fan_speed/set", tostring(command.args.speed))
-
+  send_command(device, "fan_speed", command.args.speed)
 end
 
 
 local function handle_dishwasher_mode(driver, device, command)
-
-  log.info ('Dishwasher mode command received:', command.args.mode)
-  device:emit_event(DishwasherMode.dishwasherMode(command.args.mode))
-  send_command(device, "mode/set", command.args.mode)
-
+  log.debug ('Dishwasher mode command received:', command.args.mode)
+  send_command(device, "mode", command.args.mode)
 end
 
 local function handle_dishwasher_operating_state(driver, device, command)
-
-  log.info ('Dishwasher operating state command received:', command.args.state)
-  device:emit_event(capabilities.dishwasherOperatingState.dishwasherJobState("finish"))
-  send_command(device, "state/set", command.args.state)
-
+  log.debug ('Dishwasher operating state command received:', command.args.state)
+  send_command(device, "state", command.args.state)
 end
 
 local function handle_dishwasher_baskets(driver, device, command)
-
-  log.info ('Dishwasher baskets command received:', command.args.value)
-  device:emit_event(DishwasherBaskets.baskets(command.args.value))
-  send_command(device, "baskets/set", command.args.value)
-
+  log.debug ('Dishwasher baskets command received:', command.args.value)
+  send_command(device, "baskets", command.args.value)
 end
 
----
+local function handle_coffee_strength(driver, device, command)
+  log.debug ('Coffee strength command received:', command.args.value)
+  send_command(device, "strength_level", command.args.value)
+end
+
+local function handle_water_level(driver, device, command)
+  log.debug ('Water level command received:', command.args.value)
+  send_command(device, "water_level", command.args.value)
+end
+
+local function handle_coffee_brew(driver, device, command)
+  log.debug ('Coffee brew received:', command.args.value)
+  send_command(device, "brew", command.args.value)
+end
+
+local function handle_coffee_operating_state(driver, device, command)
+  log.debug ('Coffee operating state command received:', command.args.mode)
+  send_command(device, "state", command.args.mode)
+end
 
 
 ------------------------------------------------------------------------
@@ -924,7 +963,18 @@ thisDriver = Driver("thisDriver", {
     [DishwasherBaskets.ID] = {
       ["setBaskets"] = handle_dishwasher_baskets,
     },
-      
+    [CoffeeBrew.ID] = {
+      ["setBrew"] = handle_coffee_brew
+    },
+    [CoffeeWater.ID] = {
+      ["setWaterLevel"] = handle_water_level
+    },
+    [CoffeeStength.ID] = {
+      ["setStrength"] = handle_coffee_strength
+    },
+    [capabilities.robotCleanerMovement.ID] = {
+      ["setRobotCleanerMovement"] = handle_coffee_operating_state
+    },
   }
 })
 

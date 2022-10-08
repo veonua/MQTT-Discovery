@@ -1,0 +1,82 @@
+{
+    "dashboard": {
+        "states": [],
+        "actions": []
+    },
+    "detailView": [
+        {
+            "label": "Strength",
+            "displayType": "slider",
+            "slider": {
+                "range": [
+                    0,
+                    3
+                ],
+                "alternatives": [
+                    {
+                        "key": "0",
+                        "value": "0",
+                        "type": "active"
+                    },
+                    {
+                        "key": "1",
+                        "value": "1",
+                        "type": "active"
+                    },
+                    {
+                        "key": "2",
+                        "value": "2",
+                        "type": "active"
+                    },
+                    {
+                        "key": "3",
+                        "value": "3",
+                        "type": "active"
+                    }
+                ],
+                "command": "setStrength",
+                "argumentType": "integer",
+                "value": "strength.value",
+                "valueType": "integer"
+            }
+        }
+    ],
+    "automation": {
+        "conditions": [
+        ],
+        "actions": [
+            {
+                "label": "Strength",
+                "displayType": "list",
+                "list": {
+                    "alternatives": [
+                        {
+                            "key": "0",
+                            "value": "Pre-grind",
+                            "type": "active"
+                        },
+                        {
+                            "key": "1",
+                            "value": "1",
+                            "type": "active"
+                        },
+                        {
+                            "key": "2",
+                            "value": "2",
+                            "type": "active"
+                        },
+                        {
+                            "key": "3",
+                            "value": "3",
+                            "type": "active"
+                        }
+                    ],
+                    "command": "setStrength",
+                    "argumentType": "integer"
+                }
+            }
+        ]
+    },
+    "id": "winterdictionary35590.coffeestrength2",
+    "version": 1
+}
