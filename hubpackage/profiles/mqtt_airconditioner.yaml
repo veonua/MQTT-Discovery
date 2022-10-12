@@ -2,8 +2,6 @@ name: mqttairconditioner.v1
 components:
 - id: main
   capabilities:
-  - id: temperatureMeasurement
-    version: 1
   - id: thermostatHeatingSetpoint
     version: 1
   - id: thermostatCoolingSetpoint
@@ -12,19 +10,12 @@ components:
     version: 1
   - id: fanSpeed
     version: 1
-  - id: thermostatOperatingState
-    version: 1
   - id: fanOscillationMode
     version: 1
 
   
   categories:
   - name: Thermostat
-
-- id: outdoor
-  capabilities:
-    - id: temperatureMeasurement
-      version: 1
 
 preferences:
   - title: "Command Topic"

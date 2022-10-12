@@ -29,6 +29,7 @@ local ThermostatOperatingState  = capabilities.thermostatOperatingState
 local FanSpeed                  = capabilities.fanSpeed
 local FanOscillationMode        = capabilities.fanOscillationMode
 local DishwasherOperatingState  = capabilities.dishwasherOperatingState
+local tasmota = require "tasmota"
 
 ---
 local Driver = require "st.driver"
@@ -61,6 +62,8 @@ local DishwasherBaskets         = capabilities["winterdictionary35590.dishwasher
 local CoffeeBrew                = capabilities["winterdictionary35590.coffeebrew"]          
 local CoffeeWater               = capabilities["winterdictionary35590.coffeewater"]
 local CoffeeStength             = capabilities["winterdictionary35590.coffeestrength2"]
+local FanSpeed2                 = capabilities["winterdictionary35590.fanspeed"]
+
 --local CoffeeState               = capabilities["winterdictionary35590.coffeemakeroperatingstate"]
 
 
@@ -377,6 +380,7 @@ local function create_MQTT_client(driver, device)
   end
   
   client = mqtt.client(connect_args)
+  tasmota.client = client
 
   client:on{
     connect = function(connack)
@@ -577,8 +581,13 @@ local function handle_switch(driver, device, command)
   
   device:emit_event(capabilities.switch.switch(command.command))
   
-  send_command(device, "switch", command.command)
-  
+  --if device is not air conditioner, send command to MQTT broker
+  if tasmota.is_tasmota(device) then
+    tasmota.handle_switch(driver, device, command)
+  else
+    send_command(device, "switch", command.command)
+  end
+
 end
 
 local function handle_level(driver, device, command)
@@ -610,6 +619,7 @@ local function handle_airconditioner_fan_mode(driver, device, command)
   log.info ('Air conditioner fan mode command received:', command.command)
   device:emit_event(capabilities.airConditionerFanMode.airConditionerFanMode(command.command))
   
+  tasmota.handle_fan_speed(driver, device, command)
 end
 
 local function handle_airconditioner_mode(driver, device, command)
@@ -617,7 +627,7 @@ local function handle_airconditioner_mode(driver, device, command)
   log.info ('Air conditioner mode command received:', command.args.mode)
   device:emit_event(capabilities.airConditionerMode.airConditionerMode(command.args.mode))
   
-  send_command(device, "mode", command.args.mode)
+  tasmota.handle_set_mode(driver, device, command)
 end
 
 local function handle_thermostat_heating_setpoint(driver, device, command)
@@ -625,37 +635,35 @@ local function handle_thermostat_heating_setpoint(driver, device, command)
   log.info ('Thermostat heating setpoint command received:', command.args.setpoint)
   device:emit_event(ThermostatHeatingSetpoint.heatingSetpoint(command.args.setpoint))
   
-  send_command(device, "heating", command.args.setpoint)
+  tasmota.handle_set_temp(driver, device, command)
 end
 
 local function handle_thermostat_cooling_setpoint(driver, device, command)
 
   log.info ('Thermostat cooling setpoint command received:', command.args.setpoint)
   device:emit_event(ThermostatCoolingSetpoint.coolingSetpoint(command.args.setpoint))
-  
-  send_command(device, "cooling", command.args.setpoint)
+  tasmota.handle_set_temp(driver, device, command)
 end
 
 local function handle_thermostat_mode(driver, device, command)
-  
   log.info ('Thermostat mode command received:', command.args.mode)
   device:emit_event(ThermostatMode.thermostatMode(command.args.mode))  
-  send_command(device, "mode", command.args.mode)
-
+  tasmota.handle_set_mode(driver, device, command)
 end
 
 local function handle_fan_oscillation_mode(driver, device, command)
   log.info ('Fan oscillation mode command received:', command.args.fanOscillationMode)
   device:emit_event(FanOscillationMode.fanOscillationMode(command.args.fanOscillationMode))
-  send_command(device, "fan_oscillation", command.args.fanOscillationMode)
+  tasmota.handle_set_swing(driver, device, command)
 end
 
 local function handle_fan_speed(driver, device, command)
   log.info ('Fan speed command received:', command.args.speed)
   device:emit_event(FanSpeed.fanSpeed(command.args.speed))
-  send_command(device, "fan_speed", command.args.speed)
+  device:emit_event(FanSpeed2.fanSpeed(command.args.speed))
+  tasmota.handle_set_fan(driver, device, command)
 end
-
+------------------------------------------------------------------------
 
 local function handle_dishwasher_mode(driver, device, command)
   log.debug ('Dishwasher mode command received:', command.args.mode)
@@ -788,10 +796,11 @@ local function device_added (driver, device)
       ---
       elseif cap.id == FanSpeed.ID then
         device:emit_event(FanSpeed.fanSpeed(1))
+        device:emit_event(FanSpeed2.fanSpeed(1))
       elseif cap.id == FanOscillationMode.ID then
-        local supportedModes = { "swing", "fixed" }
+        local supportedModes = { "vertical", "fixed" }
         device:emit_event(FanOscillationMode.supportedFanOscillationModes(supportedModes))
-        device:emit_event(FanOscillationMode.fanOscillationMode("swing"))
+        device:emit_event(FanOscillationMode.fanOscillationMode("vertical"))
       end
       
     end

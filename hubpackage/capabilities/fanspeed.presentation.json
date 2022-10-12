@@ -1,0 +1,198 @@
+{
+    "dashboard": {
+        "states": [
+            {
+                "label": "{{fanSpeed.value}}",
+                "alternatives": [
+                    {
+                        "key": "-1",
+                        "value": "Auto",
+                        "type": "inactive"
+                    },
+                    {
+                        "key": "0",
+                        "value": "Quiet",
+                        "type": "active"
+                    },
+                    {
+                        "key": "1",
+                        "value": "Low",
+                        "type": "active"
+                    },
+                    {
+                        "key": "2",
+                        "value": "Medium",
+                        "type": "active"
+                    },
+                    {
+                        "key": "3",
+                        "value": "High",
+                        "type": "active"
+                    },
+                    {
+                        "key": "4",
+                        "value": "Turbo",
+                        "type": "active"
+                    },
+                    {
+                        "key": "5",
+                        "value": "Max",
+                        "type": "active"
+                    }
+                ]
+            }
+        ],
+        "actions": []
+    },
+    "detailView": [
+        {
+            "label": "{{i18n.label}}",
+            "displayType": "slider",
+            "slider": {
+                "range": [
+                    -1,
+                    5
+                ],
+                "alternatives": [
+                    {
+                        "key": "-1",
+                        "value": "Auto",
+                        "type": "inactive"
+                    },
+                    {
+                        "key": "0",
+                        "value": "Quiet",
+                        "type": "active"
+                    },
+                    {
+                        "key": "1",
+                        "value": "Low",
+                        "type": "active"
+                    },
+                    {
+                        "key": "2",
+                        "value": "Medium",
+                        "type": "active"
+                    },
+                    {
+                        "key": "3",
+                        "value": "High",
+                        "type": "active"
+                    },
+                    {
+                        "key": "4",
+                        "value": "Turbo",
+                        "type": "active"
+                    },
+                    {
+                        "key": "5",
+                        "value": "Max",
+                        "type": "active"
+                    }
+                ],
+                "command": "setFanSpeed",
+                "argumentType": "integer",
+                "value": "fanSpeed.value",
+                "valueType": "integer"
+            }
+        }
+    ],
+    "automation": {
+        "conditions": [
+            {
+                "label": "{{i18n.label}}",
+                "displayType": "list",
+                "list": {
+                    "alternatives": [
+                        {
+                            "key": "-1",
+                            "value": "Auto",
+                            "type": "inactive"
+                        },
+                        {
+                            "key": "0",
+                            "value": "Quiet",
+                            "type": "active"
+                        },
+                        {
+                            "key": "1",
+                            "value": "Low",
+                            "type": "active"
+                        },
+                        {
+                            "key": "2",
+                            "value": "Medium",
+                            "type": "active"
+                        },
+                        {
+                            "key": "3",
+                            "value": "High",
+                            "type": "active"
+                        },
+                        {
+                            "key": "4",
+                            "value": "Turbo",
+                            "type": "active"
+                        },
+                        {
+                            "key": "5",
+                            "value": "Max",
+                            "type": "active"
+                        }
+                    ],
+                    "value": "fanSpeed.value",
+                    "valueType": "integer"
+                }
+            }
+        ],
+        "actions": [
+            {
+                "label": "{{i18n.label}}",
+                "displayType": "list",
+                "list": {
+                    "alternatives": [
+                        {
+                            "key": "-1",
+                            "value": "Auto",
+                            "type": "inactive"
+                        },
+                        {
+                            "key": "0",
+                            "value": "Quiet",
+                            "type": "active"
+                        },
+                        {
+                            "key": "1",
+                            "value": "Low",
+                            "type": "active"
+                        },
+                        {
+                            "key": "2",
+                            "value": "Medium",
+                            "type": "active"
+                        },
+                        {
+                            "key": "3",
+                            "value": "High",
+                            "type": "active"
+                        },
+                        {
+                            "key": "4",
+                            "value": "Turbo",
+                            "type": "active"
+                        },
+                        {
+                            "key": "5",
+                            "value": "Max",
+                            "type": "active"
+                        }
+                    ],
+                    "command": "setFanSpeed",
+                    "argumentType": "integer"
+                }
+            }
+        ]
+    },
+    "id": "winterdictionary35590.fanspeed",
+    "version": 1
+}

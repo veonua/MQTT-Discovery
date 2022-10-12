@@ -1,0 +1,42 @@
+{
+    "id": "winterdictionary35590.fanspeed",
+    "version": 1,
+    "name": "Fan Speed",
+    "ephemeral": false,
+    "attributes": {
+        "fanSpeed": {
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "value": {
+                        "title": "PositiveInteger",
+                        "type": "integer",
+                        "minimum": -1
+                    }
+                },
+                "additionalProperties": false,
+                "required": [
+                    "value"
+                ]
+            },
+            "setter": "setFanSpeed",
+            "enumCommands": []
+        }
+    },
+    "commands": {
+        "setFanSpeed": {
+            "name": "setFanSpeed",
+            "arguments": [
+                {
+                    "name": "speed",
+                    "optional": false,
+                    "schema": {
+                        "title": "PositiveInteger",
+                        "type": "integer",
+                        "minimum": -1
+                    }
+                }
+            ]
+        }
+    }
+}

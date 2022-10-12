@@ -1,4 +1,4 @@
-name: 'MQTT Handler V1.3'
+name: 'MQTT Handler V1.4'
 packageKey: 'MQTThandler'
 permissions:
     lan: {}
