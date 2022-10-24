@@ -2,20 +2,29 @@ name: mqttairconditioner.v1
 components:
 - id: main
   capabilities:
+  - id: thermostatMode
+    version: 1
   - id: thermostatHeatingSetpoint
     version: 1
   - id: thermostatCoolingSetpoint
     version: 1
-  - id: thermostatMode
+  - id: temperatureMeasurement
     version: 1
   - id: fanSpeed
     version: 1
   - id: fanOscillationMode
     version: 1
-
-  
   categories:
-  - name: Thermostat
+    - name: AirConditioner
+- id: outdoor
+  capabilities:
+  - id: temperatureMeasurement
+    version: 1
+  
+metadata:
+  ocfDeviceType: oic.d.airconditioner
+  deviceType": AirConditioner
+  deviceTypeId: AirConditioner
 
 preferences:
   - title: "Command Topic"

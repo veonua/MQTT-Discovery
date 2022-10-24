@@ -199,10 +199,10 @@ local function proc_state(topic, state)
   else
     if topic.cap == 'mode' then
       if topic.profile == 'airconditioner' then
-        try_emit(device, capabilities.airConditionerMode, state)
+        -- device:emit_event(capabilities.airConditionerMode.airConditionerMode(state))
+        device:emit_event( ThermostatMode.thermostatMode(state) )
       elseif topic.profile == 'dishwasher' then
         try_emit(device, capabilities.dishwasherMode.dishwasherMode, state)
-        --try_emit(device, DishwasherMode.dishwasherMode, state)
       end
     elseif topic.cap == 'brew' then
       if state == nil or state == '' then
@@ -238,9 +238,40 @@ local function proc_state(topic, state)
     elseif topic.cap == 'water_hardness' then
       device:emit_event(cap_status.status(state))
       
-    elseif topic.cap == "baskets" then
-      device:emit_event(DishwasherBaskets.baskets(state))
+    elseif topic.cap == "outdoortemp" then
+      local temp = tonumber(state)
+      if temp then
+        if temp == 127 then
+          --device:emit_component_event(device.profile.components["outdoor"], TemperatureMeasurement.temperature(-100))
+        else
+          device:emit_component_event(device.profile.components["outdoor"], TemperatureMeasurement.temperature(temp))
+        end
+      end
+    
+    elseif topic.cap == "setpoint" then
+      local temp = tonumber(state)
+      if temp then
+        device:emit_event(ThermostatCoolingSetpoint.coolingSetpoint({value=temp, unit='C'}))
+        device:emit_event(ThermostatHeatingSetpoint.heatingSetpoint({value=temp, unit='C'}))
+      end
 
+    elseif topic.cap == "fanmode" or topic.cap == "fan_mode" then
+      
+      if state == 'auto' then
+        device:emit_event(FanSpeed.fanSpeed(0))
+      elseif state == 'quiet' then
+        device:emit_event(FanSpeed.fanSpeed(1))
+      else 
+        device:emit_event(FanSpeed.fanSpeed(tonumber(state)))
+      end
+  
+    elseif topic.cap == 'swingmode' then
+      local value = "fixed"
+      if state == 'on' then
+        value = "vertical"
+      end
+      device:emit_event(FanOscillationMode.fanOscillationMode(value))
+  
     elseif topic.cap == 'switch' or topic.cap == 'plug' or topic.cap == 'light' then
     
       if validate_state(capabilities.switch.switch, state) then
@@ -580,14 +611,8 @@ local function handle_switch(driver, device, command)
   log.info ('Switch command received:', command.command)
   
   device:emit_event(capabilities.switch.switch(command.command))
+  send_command(device, "switch", command.command)
   
-  --if device is not air conditioner, send command to MQTT broker
-  if tasmota.is_tasmota(device) then
-    tasmota.handle_switch(driver, device, command)
-  else
-    send_command(device, "switch", command.command)
-  end
-
 end
 
 local function handle_level(driver, device, command)
@@ -617,51 +642,60 @@ end
 local function handle_airconditioner_fan_mode(driver, device, command)
 
   log.info ('Air conditioner fan mode command received:', command.command)
-  device:emit_event(capabilities.airConditionerFanMode.airConditionerFanMode(command.command))
-  
-  tasmota.handle_fan_speed(driver, device, command)
+  --device:emit_event(capabilities.airConditionerFanMode.airConditionerFanMode(command.command))
+  send_command(device, command.command, command.command)
 end
 
 local function handle_airconditioner_mode(driver, device, command)
 
   log.info ('Air conditioner mode command received:', command.args.mode)
-  device:emit_event(capabilities.airConditionerMode.airConditionerMode(command.args.mode))
-  
-  tasmota.handle_set_mode(driver, device, command)
+  --device:emit_event(capabilities.airConditionerMode.airConditionerMode(command.args.mode))
+  send_command(device, "mode", command.args.mode)
+  --tasmota.handle_set_mode(driver, device, command)
 end
 
 local function handle_thermostat_heating_setpoint(driver, device, command)
 
   log.info ('Thermostat heating setpoint command received:', command.args.setpoint)
-  device:emit_event(ThermostatHeatingSetpoint.heatingSetpoint(command.args.setpoint))
+  --device:emit_event(ThermostatHeatingSetpoint.heatingSetpoint(command.args.setpoint))
   
-  tasmota.handle_set_temp(driver, device, command)
+  send_command(device, "setpoint", command.args.setpoint)
 end
 
 local function handle_thermostat_cooling_setpoint(driver, device, command)
-
   log.info ('Thermostat cooling setpoint command received:', command.args.setpoint)
-  device:emit_event(ThermostatCoolingSetpoint.coolingSetpoint(command.args.setpoint))
-  tasmota.handle_set_temp(driver, device, command)
+  --device:emit_event(ThermostatCoolingSetpoint.coolingSetpoint(command.args.setpoint))
+  send_command(device, "setpoint", command.args.setpoint)
 end
 
 local function handle_thermostat_mode(driver, device, command)
   log.info ('Thermostat mode command received:', command.args.mode)
-  device:emit_event(ThermostatMode.thermostatMode(command.args.mode))  
-  tasmota.handle_set_mode(driver, device, command)
+  --device:emit_event(ThermostatMode.thermostatMode(command.args.mode))  
+  send_command(device, "mode", command.args.mode)
 end
 
 local function handle_fan_oscillation_mode(driver, device, command)
   log.info ('Fan oscillation mode command received:', command.args.fanOscillationMode)
-  device:emit_event(FanOscillationMode.fanOscillationMode(command.args.fanOscillationMode))
-  tasmota.handle_set_swing(driver, device, command)
+  --device:emit_event(FanOscillationMode.fanOscillationMode(command.args.fanOscillationMode))
+  local swing = command.args.fanOscillationMode == 'vertical' and 'on' or 'off'
+    
+  send_command(device, "swingmode", swing)
 end
 
 local function handle_fan_speed(driver, device, command)
   log.info ('Fan speed command received:', command.args.speed)
-  device:emit_event(FanSpeed.fanSpeed(command.args.speed))
-  device:emit_event(FanSpeed2.fanSpeed(command.args.speed))
-  tasmota.handle_set_fan(driver, device, command)
+  --device:emit_event(FanSpeed.fanSpeed(command.args.speed))
+  
+  local speed = tostring(command.args.speed)
+  if command.args.speed == 0 then
+    speed = 'auto'
+  elseif command.args.speed == 1 then
+    speed = 'quiet'
+  end
+
+  send_command(device, "fanmode", speed)
+  --device:emit_event(FanSpeed2.fanSpeed(command.args.speed))
+  --tasmota.handle_set_fan(driver, device, command)
 end
 ------------------------------------------------------------------------
 
@@ -766,10 +800,10 @@ local function device_added (driver, device)
           "auto", "quiet", "lvl_1", "lvl_2", "lvl_3", "lvl_4", "lvl_5"
         }
         device:emit_event(capabilities.airConditionerFanMode.supportedAcFanModes(supportedAcFanModes))
-        --device:emit_event(capabilities.airConditionerFanMode.setFanMode("auto"))
+        device:emit_event(capabilities.airConditionerFanMode.setFanMode("auto"))
       elseif cap.id == 'airConditionerMode' then
         local supportedAcModes = {
-          "auto", "cool", "heat", "dry", "fan"
+          "cool", "dry", "heat", "auto", "fan"
         }
         device:emit_event(capabilities.airConditionerMode.supportedAcModes(supportedAcModes))
         device:emit_event(capabilities.airConditionerMode.airConditionerMode("auto"))
@@ -796,11 +830,10 @@ local function device_added (driver, device)
       ---
       elseif cap.id == FanSpeed.ID then
         device:emit_event(FanSpeed.fanSpeed(1))
-        device:emit_event(FanSpeed2.fanSpeed(1))
       elseif cap.id == FanOscillationMode.ID then
         local supportedModes = { "vertical", "fixed" }
         device:emit_event(FanOscillationMode.supportedFanOscillationModes(supportedModes))
-        device:emit_event(FanOscillationMode.fanOscillationMode("vertical"))
+        device:emit_event(FanOscillationMode.fanOscillationMode("fixed"))
       end
       
     end
