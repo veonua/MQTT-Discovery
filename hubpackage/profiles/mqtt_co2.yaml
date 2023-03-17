@@ -1,0 +1,15 @@
+name: mqttco2.v1
+components:
+- id: main
+  capabilities:
+    - id: carbonDioxideMeasurement
+      version: 1
+    - id: carbonDioxideHealthConcern
+      version: 1
+    - id: dustSensor
+      version: 1
+    - id: illuminanceMeasurement
+      version: 1
+    
+  categories:
+  - name: AirQualityDetector

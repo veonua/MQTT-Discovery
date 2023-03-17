@@ -2,24 +2,25 @@ name: mqttdishwasher.v1
 components:
 - id: main
   capabilities:
-  - id: switch
-    version: 1
-
   - id: dishwasherOperatingState
     version: 1
 
   - id: dishwasherMode
     version: 1
 
-  - id: temperatureMeasurement
+  - id: winterdictionary35590.dishwasherbaskets
     version: 1
+
+  - id: switch
+    version: 1
+
   - id: contactSensor
     version: 1
 
-  - id: partyvoice23922.status
+  - id: temperatureMeasurement
     version: 1
-
-  - id: winterdictionary35590.dishwasherbaskets
+  
+  - id: partyvoice23922.status
     version: 1
 
   categories:

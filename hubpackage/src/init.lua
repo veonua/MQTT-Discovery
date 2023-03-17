@@ -29,7 +29,6 @@ local ThermostatOperatingState  = capabilities.thermostatOperatingState
 local FanSpeed                  = capabilities.fanSpeed
 local FanOscillationMode        = capabilities.fanOscillationMode
 local DishwasherOperatingState  = capabilities.dishwasherOperatingState
-local tasmota = require "tasmota"
 
 ---
 local Driver = require "st.driver"
@@ -108,6 +107,7 @@ local profiles =  {
                     ['airconditioner'] = 'mqttairconditioner.v1',
                     ['coffee']         = 'mqttcoffeemaker.v1',
                     ['dishwasher']     = 'mqttdishwasher.v1',
+                    ['sensor']         = 'mqttco2.v1',
                   }
 
 
@@ -244,7 +244,7 @@ local function proc_state(topic, state)
         if temp == 127 then
           --device:emit_component_event(device.profile.components["outdoor"], TemperatureMeasurement.temperature(-100))
         else
-          device:emit_component_event(device.profile.components["outdoor"], TemperatureMeasurement.temperature(temp))
+          device:emit_component_event(device.profile.components["outdoor"], TemperatureMeasurement.temperature(({ value = temp, unit = "C"}) ))
         end
       end
     
@@ -315,7 +315,7 @@ local function proc_state(topic, state)
     
       local temp = tonumber(state)
       if temp then
-        device:emit_event(TemperatureMeasurement.temperature(temp))
+        device:emit_event(TemperatureMeasurement.temperature(({ value = temp, unit = "C"}) ))
       end
     
     elseif topic.cap == 'alarm' then
@@ -327,6 +327,42 @@ local function proc_state(topic, state)
       local level = tonumber(state)
       if level then
         device:emit_event(capabilities.switchLevel.level(level))
+      end
+    
+    elseif topic.cap == 'pm10' then
+      local pm10 = tonumber(state)
+      if pm10 then
+        device:emit_event(capabilities.dustSensor.dustLevel(pm10))
+      end
+    elseif topic.cap == 'pm2.5' then
+      local pm25 = tonumber(state)
+      if pm25 then
+        device:emit_event(capabilities.dustSensor.fineDustLevel(pm25))
+      end
+    elseif topic.cap == 'ldr' then
+      local illuminance = tonumber(state)
+      if illuminance then
+        device:emit_event(capabilities.illuminanceMeasurement.illuminance(illuminance))
+      end
+
+    elseif topic.cap == 'co2' then
+      local co2 = tonumber(state)
+      if co2 then
+        device:emit_event(capabilities.carbonDioxideMeasurement.carbonDioxide({value=co2, unit='ppm'}))
+        local airQuality = "good"
+        if co2 > 5000 then
+          airQuality = "hazardous"
+        elseif co2 > 2500 then
+          airQuality = "veryUnhealthy"
+        elseif co2 > 2000 then
+          airQuality = "unhealthy"
+        elseif co2 > 1500 then
+          airQuality = "slightlyUnhealthy"
+        elseif co2 > 1000 then
+          airQuality = "moderate"    
+        end
+
+        device:emit_event(capabilities.carbonDioxideHealthConcern.carbonDioxideHealthConcern(airQuality))
       end
     
     elseif topic.cap == 'state' then
@@ -411,7 +447,6 @@ local function create_MQTT_client(driver, device)
   end
   
   client = mqtt.client(connect_args)
-  tasmota.client = client
 
   client:on{
     connect = function(connack)
@@ -651,7 +686,6 @@ local function handle_airconditioner_mode(driver, device, command)
   log.info ('Air conditioner mode command received:', command.args.mode)
   --device:emit_event(capabilities.airConditionerMode.airConditionerMode(command.args.mode))
   send_command(device, "mode", command.args.mode)
-  --tasmota.handle_set_mode(driver, device, command)
 end
 
 local function handle_thermostat_heating_setpoint(driver, device, command)
@@ -695,7 +729,6 @@ local function handle_fan_speed(driver, device, command)
 
   send_command(device, "fanmode", speed)
   --device:emit_event(FanSpeed2.fanSpeed(command.args.speed))
-  --tasmota.handle_set_fan(driver, device, command)
 end
 ------------------------------------------------------------------------
 
@@ -787,6 +820,12 @@ local function device_added (driver, device)
         device:emit_event(capabilities.alarm.alarm('off'))
       elseif cap.id == 'switchLevel' then
         device:emit_event(capabilities.switchLevel.level(0))
+      elseif cap.id == 'dustSensor' then
+        device:emit_event(capabilities.dustSensor.dustLevel({value=0}))
+        device:emit_event(capabilities.dustSensor.fineDustLevel({value=0}))
+      elseif cap.id == 'carbonDioxideMeasurement' then
+        device:emit_event(capabilities.carbonDioxideMeasurement.carbonDioxideMeasurement({value=400, unit='ppm'}))
+        device:emit_event(capabilities.carbonDioxideHealthConcern.carbonDioxideHealthConcern("good"))
       elseif cap.id == 'valve' then
         device:emit_event(capabilities.valve.valve('closed'))
       ---
