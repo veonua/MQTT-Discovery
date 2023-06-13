@@ -201,6 +201,9 @@ local function proc_state(topic, state)
       if topic.profile == 'airconditioner' then
         -- device:emit_event(capabilities.airConditionerMode.airConditionerMode(state))
         device:emit_event( ThermostatMode.thermostatMode(state) )
+        if state ~= 'off' then
+          device:set_field('thermostatMode', state )
+        end
       elseif topic.profile == 'dishwasher' then
         try_emit(device, capabilities.dishwasherMode.dishwasherMode, state)
       end
@@ -647,7 +650,15 @@ local function handle_switch(driver, device, command)
   
   device:emit_event(capabilities.switch.switch(command.command))
   send_command(device, "switch", command.command)
-  
+
+  local caps = device.st_store.profile.components.main.capabilities
+  if caps.thermostatMode then
+    mode = 'off'
+    if command.command == 'on' then
+      mode = device:get_field('thermostatMode')
+    end
+    send_command(device, "mode", mode)
+  end
 end
 
 local function handle_level(driver, device, command)
