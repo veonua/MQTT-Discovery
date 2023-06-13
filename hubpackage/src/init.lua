@@ -651,8 +651,7 @@ local function handle_switch(driver, device, command)
   device:emit_event(capabilities.switch.switch(command.command))
   send_command(device, "switch", command.command)
 
-  local caps = device.st_store.profile.components.main.capabilities
-  if caps.thermostatMode then
+  if device:supports_capability(ThermostatMode, "main") then
     mode = 'off'
     if command.command == 'on' then
       mode = device:get_field('thermostatMode')
